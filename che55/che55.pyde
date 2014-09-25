@@ -50,6 +50,45 @@ class Pawn(Piece):
             ellipse(self.currentPos[0], self.currentPos[1]+7, 20, 20)
         else:
             ellipse(self.currentPos[0], self.currentPos[1]+4, 20, 20)
+            
+            
+    def legalmove(self, move):
+        # TODO: NEED TO ADD RULES FOR ENPASSANT
+        move = list(move)
+        originSq = move[0]+move[1]
+        destSq = move[2]+move[3]
+        legal = False
+        prox = False
+        sameSide = False
+        # TODO: MAYBE DELETE THIS AND MAKE IT A GLOBAL VAR
+        enpassant = False
+        
+        # iterate through pieces to see if any are in proximity of pawn
+        global pieces
+        for p in pieces:
+            if square(p.currentPos) == destSq and p != self:
+                prox = True
+                if p.side == self.side:
+                    sameSide = True
+            else:
+                pass
+        
+        if not prox and destSq[0] == originSq[0]:
+            if self.side == 1:
+                if (int(destSq[1]) == int(originSq[1])+1) or (originSq == self.startSq and int(destSq[1]) == int(originSq[1])+2):
+                    legal = True
+            else:
+                if (int(destSq[1]) == int(originSq[1])-1) or (originSq == self.startSq and int(destSq[1]) == int(originSq[1])-2):
+                    legal = True
+        elif not sameSide and (prox or enpassant) and (files.index(destSq[0]) == files.index(originSq[0])+1 or files.index(destSq[0]) == files.index(originSq[0])-1):
+            if self.side == 1:
+                if int(destSq[1]) == int(originSq[1])+1:
+                    legal = True
+            else:
+                if int(destSq[1]) == int(originSq[1])-1:
+                    legal = True
+        
+        return legal
         
 class Bishop(Piece):
     def display(self):
@@ -76,6 +115,19 @@ class Bishop(Piece):
             triangle(self.currentPos[0], self.currentPos[1]-10*sqrt(2)+4,
                      self.currentPos[0]+20, self.currentPos[1]+10*sqrt(2)+4,
                      self.currentPos[0]-20, self.currentPos[1]+10*sqrt(2)+4)
+    
+    
+    def legalmove(self, move):
+        move = list(move)
+        originSq = move[0]+move[1]
+        destSq = move[2]+move[3]
+        legal = False
+        
+        if abs(files.index(originSq[0]) - files.index(destSq[0])) == abs(ranks.index(originSq[1]) - ranks.index(destSq[1])):
+            legal = True
+        
+        return legal
+            
 
 class Knight(Piece):
     def display(self):
@@ -181,10 +233,12 @@ def moveviz(m):
 def mousePressed():
     if 30 < mouseX < 670 and 30 < mouseY < 670:
         global selected
+        global lastMoveOriginSquare
         mouseSquare = square((mouseX, mouseY))
         for p in pieces:
             if square(p.currentPos) == mouseSquare:
                 selected = p
+                lastMoveOriginSquare = square(p.currentPos)
             else:
                 pass
         global mousebutt
@@ -195,8 +249,13 @@ def mouseReleased():
         global mousebutt
         mousebutt = False
         mouseSquare = square((mouseX, mouseY))
+        global lastmove
+        lastmove = lastMoveOriginSquare+mouseSquare
         global selected
-        selected.currentPos = position(mouseSquare)
+        if selected.legalmove(lastmove):
+            selected.currentPos = position(mouseSquare)
+        else:
+            selected.currentPos = position(lastMoveOriginSquare)
         global pieces
         for p in pieces:
             if p != selected and p.currentPos == selected.currentPos:
@@ -216,6 +275,10 @@ def mouseReleased():
 
 def setup():
     size(displayWidth, displayHeight)
+    
+    # create fonts
+    global josefin
+    josefin = createFont("JosefinSans-Regular", 16)
     
     # instantiate pieces
     whitePawnStartPos = ['a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2']
@@ -247,7 +310,23 @@ def setup():
     global mousebutt
     mousebutt = False
     
+    global lastMoveOriginSquare
+    lastMoveOriginSquare = None
+    
 def draw():
+    # draw the background
+    background(230)
+    
+    # draw the board frame
+    noStroke()
+    fill(188, 154, 105)
+    triangle(10, 10, 690, 10, 350, 350)
+    fill(127, 104, 71)
+    triangle(10, 690, 350, 350, 690, 690)
+    fill(156, 129, 86)
+    triangle(10, 10, 350, 350, 10, 690)
+    triangle(690, 10, 350, 350, 690, 690)
+    
     # draw the board grid
     noStroke()
     for i in range(8):
@@ -258,6 +337,15 @@ def draw():
                 fill(243, 240, 213)
             rectMode(CORNER)
             rect(30+i*80, 30+j*80, 80, 80)
+            
+    # draw the coordinate labels
+    textFont(josefin)
+    fill(233, 233, 234)
+    for i in range(8):
+        textAlign(CENTER, TOP)
+        text(files[i].upper(), 70+80*i, 670)
+        textAlign(RIGHT, CENTER)
+        text(ranks[7-i], 25, 70+80*i)
     
     # while mouse pressed, and until mouse released,
     # selected piece follows cursor
@@ -271,6 +359,6 @@ def draw():
     for p in pieces:
         p.display()
     
-    # to ensure selected piece stays on top
+    # ensure selected piece stays on top
     if mousebutt:
         selected.display()
