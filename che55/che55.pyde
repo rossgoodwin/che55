@@ -198,7 +198,7 @@ def mouseReleased():
         global selected
         selected.currentPos = position(mouseSquare)
         global pieces
-        for p in pieces[:]:
+        for p in pieces:
             if p != selected and p.currentPos == selected.currentPos:
                 global captured
                 captured = p
@@ -270,3 +270,7 @@ def draw():
     global pieces
     for p in pieces:
         p.display()
+    
+    # to ensure selected piece stays on top
+    if mousebutt:
+        selected.display()
