@@ -28,6 +28,8 @@ class Piece(object):
         self.side = side
 
 class Pawn(Piece):
+    # TODO: 1. ENPASSANT
+    # 2. BECOMING A QUEEN (OR ANY OTHER PIECE)
     def display(self):
     # display at currentPos
         self.shadow()
@@ -51,7 +53,6 @@ class Pawn(Piece):
         else:
             ellipse(self.currentPos[0], self.currentPos[1]+4, 20, 20)
             
-            
     def legalmove(self, move):
         # TODO: NEED TO ADD RULES FOR ENPASSANT
         move = list(move)
@@ -61,6 +62,7 @@ class Pawn(Piece):
         prox = False
         sameSide = False
         # TODO: MAYBE DELETE THIS AND MAKE IT A GLOBAL VAR
+        # ALSO NOTE ITS USE IN LOGICAL STATEMENT BELOW
         enpassant = False
         
         # iterate through pieces to see if any are in proximity of pawn
@@ -115,7 +117,6 @@ class Bishop(Piece):
             triangle(self.currentPos[0], self.currentPos[1]-10*sqrt(2)+4,
                      self.currentPos[0]+20, self.currentPos[1]+10*sqrt(2)+4,
                      self.currentPos[0]-20, self.currentPos[1]+10*sqrt(2)+4)
-    
     
     def legalmove(self, move):
         move = list(move)
@@ -245,7 +246,26 @@ class Rook(Piece):
         
         if (horizontalDiff != 0 and verticalDiff == 0) or (horizontalDiff == 0 and verticalDiff != 0):
             legal = True
-            # TO DO -- NEEDS THING SIMILAR TO BISHOP WHERE IT CAN'T GO THROUGH PIECES
+            if verticalDiff > 0:
+                for i in range(1, verticalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == destSq[0] + ranks[ranks.index(destSq[1])-i]):
+                            legal = False
+            elif verticalDiff < 0:
+                for i in range(1, abs(verticalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == destSq[0] + ranks[ranks.index(destSq[1])+i]):
+                            legal = False
+            elif horizontalDiff > 0:
+                for i in range(1, horizontalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])-i] + destSq[1]):
+                            legal = False
+            elif horizontalDiff < 0:
+                for i in range(1, abs(horizontalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])+i] + destSq[1]):
+                            legal = False
         
         # prevent taking own pieces
         for p in pieces:
@@ -276,9 +296,83 @@ class Queen(Piece):
         if selected == self:
             shape(queenShadow, self.currentPos[0], self.currentPos[1]+7, 50, 50)
         else:
-            shape(queenShadow, self.currentPos[0], self.currentPos[1]+4, 50, 50)        
+            shape(queenShadow, self.currentPos[0], self.currentPos[1]+4, 50, 50)    
+    
+    def legalmove(self, move):
+        move = list(move)
+        originSq = move[0]+move[1]
+        destSq = move[2]+move[3]
+        legal = False
+  
+        global files
+        global ranks
+        horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
+        verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
+        
+        # rook logic + bishop logic
+        # TODO: MAKE THESE FUNCTIONS BECAUSE D.R.Y.
+        if (horizontalDiff != 0 and verticalDiff == 0) or (horizontalDiff == 0 and verticalDiff != 0):
+            legal = True
+            if verticalDiff > 0:
+                for i in range(1, verticalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == destSq[0] + ranks[ranks.index(destSq[1])-i]):
+                            legal = False
+            elif verticalDiff < 0:
+                for i in range(1, abs(verticalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == destSq[0] + ranks[ranks.index(destSq[1])+i]):
+                            legal = False
+            elif horizontalDiff > 0:
+                for i in range(1, horizontalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])-i] + destSq[1]):
+                            legal = False
+            elif horizontalDiff < 0:
+                for i in range(1, abs(horizontalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])+i] + destSq[1]):
+                            legal = False
+        elif abs(horizontalDiff) == abs(verticalDiff):
+        # if move == diagonal
+            legal = True
+            # but if there are pieces in the way...
+            if horizontalDiff > 0 and verticalDiff > 0:
+            # file+, rank+
+                for i in range(1, horizontalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])-i] + ranks[ranks.index(destSq[1])-i]):
+                            legal = False
+            elif horizontalDiff < 0 and verticalDiff < 0:
+            # file-, rank-
+                for i in range(1, abs(horizontalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])+i] + ranks[ranks.index(destSq[1])+i]):
+                            legal = False
+            elif horizontalDiff > 0 and verticalDiff < 0:
+            # file+, rank-
+                for i in range(1, horizontalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])-i] + ranks[ranks.index(destSq[1])+i]):
+                            legal = False
+            elif horizontalDiff < 0 and verticalDiff > 0:
+            # file-, rank+
+                for i in range(1, abs(horizontalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])+i] + ranks[ranks.index(destSq[1])-i]):
+                            legal = False
+                            
+        # prevent taking own pieces
+        for p in pieces:
+            if p != self and square(p.currentPos) == destSq and self.side == p.side:
+                legal = False
+        
+        return legal
+    
             
 class King(Piece):
+    # TODO: MOVING INTO / OUT OF CHECK
+    # CASTLING
     def display(self):
         self.shadow()
         smooth()
@@ -304,6 +398,25 @@ class King(Piece):
         else:
             rect(self.currentPos[0], self.currentPos[1]+4, 40, 10)
             rect(self.currentPos[0], self.currentPos[1]+4, 10, 40)
+            
+    def legalmove(self, move):
+        move = list(move)
+        originSq = move[0]+move[1]
+        destSq = move[2]+move[3]
+        legal = False
+  
+        global files
+        global ranks
+        horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
+        verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
+        
+        if (abs(horizontalDiff) == 1 and verticalDiff == 0) or (abs(verticalDiff) == 1 and horizontalDiff == 0) or (abs(verticalDiff) == 1 and abs(horizontalDiff) == 1):
+            legal = True
+            for p in pieces:
+                if p != self and square(p.currentPos) == destSq and self.side == p.side:
+                    legal = False
+        
+        return legal
         
 
 def moveviz(m):
@@ -355,6 +468,17 @@ def mouseReleased():
         selected = Piece('e4', 1)
 
 def setup():
+    # TODO: IMPLEMENT GAME LIST
+    # THINGS THAT GO WITH GAME LIST:
+    # - TURNS (ONLY SIDE THAT HAS TURN CAN MOVE)
+    # - CASTLING
+    #    - NO CASTLING THROUGH CHECK
+    #    - NO CASTLING OUT OF CHECK
+    #    - NO CASTLING AFTER KING OR ROOK HAS MOVED
+    # - ENPASSANT
+    # - PAWNS BECOMING QUEENS, ETC.
+    # - CHECK
+    # - CHECKMATE
     size(displayWidth, displayHeight)
     
     # create fonts
@@ -394,7 +518,11 @@ def setup():
     global lastMoveOriginSquare
     lastMoveOriginSquare = None
     
+    global game
+    game = []
+    
 def draw():
+    # TODO: IMPLMENENT ANIMATED ENGINE MOVES
     # draw the background
     background(230)
     
