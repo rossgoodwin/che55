@@ -59,35 +59,27 @@ class Pawn(Piece):
         originSq = move[0]+move[1]
         destSq = move[2]+move[3]
         legal = False
-        prox = False
-        sameSide = False
-        # TODO: MAYBE DELETE THIS AND MAKE IT A GLOBAL VAR
-        # ALSO NOTE ITS USE IN LOGICAL STATEMENT BELOW
-        enpassant = False
         
-        # iterate through pieces to see if any are in proximity of pawn
+        global files
+        global ranks
+        horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
+        verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
+        
         global pieces
-        for p in pieces:
-            if square(p.currentPos) == destSq and p != self:
-                prox = True
-                if p.side == self.side:
-                    sameSide = True
-            else:
-                pass
         
-        if not prox and destSq[0] == originSq[0]:
-            if self.side == 1:
-                if (int(destSq[1]) == int(originSq[1])+1) or (originSq == self.startSq and int(destSq[1]) == int(originSq[1])+2):
-                    legal = True
-            else:
-                if (int(destSq[1]) == int(originSq[1])-1) or (originSq == self.startSq and int(destSq[1]) == int(originSq[1])-2):
-                    legal = True
-        elif not sameSide and (prox or enpassant) and (files.index(destSq[0]) == files.index(originSq[0])+1 or files.index(destSq[0]) == files.index(originSq[0])-1):
-            if self.side == 1:
-                if int(destSq[1]) == int(originSq[1])+1:
-                    legal = True
-            else:
-                if int(destSq[1]) == int(originSq[1])-1:
+        if horizontalDiff == 0 and (verticalDiff == -1 + self.side * 2):
+            legal = True
+            for p in pieces:
+                if p != self and square(p.currentPos) == destSq:
+                    legal = False
+        elif horizontalDiff == 0 and (verticalDiff == -2 + self.side * 4) and originSq == self.startSq:
+            legal = True
+            for p in pieces:
+                if p != self and (square(p.currentPos) == destSq or square(p.currentPos) == destSq[0] + str(int(destSq[1]) + 1 + self.side * -2)):
+                    legal = False
+        elif abs(horizontalDiff) == 1 and (verticalDiff == -1 + self.side * 2):
+            for p in pieces:
+                if p != self and p.side != self.side and square(p.currentPos) == destSq:
                     legal = True
         
         return legal
@@ -428,19 +420,20 @@ def mousePressed():
     if 30 < mouseX < 670 and 30 < mouseY < 670:
         global selected
         global lastMoveOriginSquare
+        global game
+        global mousebutt
         mouseSquare = square((mouseX, mouseY))
         for p in pieces:
-            if square(p.currentPos) == mouseSquare:
+            if square(p.currentPos) == mouseSquare and len(game) % 2 != p.side:
                 selected = p
                 lastMoveOriginSquare = square(p.currentPos)
+                mousebutt = True
             else:
                 pass
-        global mousebutt
-        mousebutt = True
 
 def mouseReleased():
-    if 30 < mouseX < 670 and 30 < mouseY < 670:
-        global mousebutt
+    global mousebutt
+    if 30 < mouseX < 670 and 30 < mouseY < 670 and mousebutt == True:
         mousebutt = False
         mouseSquare = square((mouseX, mouseY))
         global lastmove
@@ -448,6 +441,9 @@ def mouseReleased():
         global selected
         if selected.legalmove(lastmove):
             selected.currentPos = position(mouseSquare)
+            global game
+            game.append(lastmove)
+            print game
         else:
             selected.currentPos = position(lastMoveOriginSquare)
         global pieces
