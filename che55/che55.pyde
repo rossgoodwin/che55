@@ -123,8 +123,45 @@ class Bishop(Piece):
         destSq = move[2]+move[3]
         legal = False
         
-        if abs(files.index(originSq[0]) - files.index(destSq[0])) == abs(ranks.index(originSq[1]) - ranks.index(destSq[1])):
+        global files
+        global ranks
+        horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
+        verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
+        
+        global pieces
+        if abs(horizontalDiff) == abs(verticalDiff):
+        # if move == diagonal
             legal = True
+            # but if there are pieces in the way...
+            if horizontalDiff > 0 and verticalDiff > 0:
+            # file+, rank+
+                for i in range(1, horizontalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])-i] + ranks[ranks.index(destSq[1])-i]):
+                            legal = False
+            elif horizontalDiff < 0 and verticalDiff < 0:
+            # file-, rank-
+                for i in range(1, abs(horizontalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])+i] + ranks[ranks.index(destSq[1])+i]):
+                            legal = False
+            elif horizontalDiff > 0 and verticalDiff < 0:
+            # file+, rank-
+                for i in range(1, horizontalDiff):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])-i] + ranks[ranks.index(destSq[1])+i]):
+                            legal = False
+            elif horizontalDiff < 0 and verticalDiff > 0:
+            # file-, rank+
+                for i in range(1, abs(horizontalDiff)):
+                    for p in pieces:
+                        if p != self and (square(p.currentPos) == files[files.index(destSq[0])+i] + ranks[ranks.index(destSq[1])-i]):
+                            legal = False
+        
+        # prevent taking own pieces
+        for p in pieces:
+            if p != self and square(p.currentPos) == destSq and self.side == p.side:
+                legal = False
         
         return legal
             
@@ -151,6 +188,27 @@ class Knight(Piece):
         else:
             arc(self.currentPos[0]-12.5, self.currentPos[1]+20+4, 50, 80, PI+HALF_PI, TWO_PI, PIE)
             
+    def legalmove(self, move):
+        move = list(move)
+        originSq = move[0]+move[1]
+        destSq = move[2]+move[3]
+        legal = False
+  
+        global files
+        global ranks
+        horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
+        verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
+        
+        if (abs(verticalDiff) == 2 and abs(horizontalDiff) == 1) or (abs(verticalDiff) == 1 and abs(horizontalDiff) == 2):
+            legal = True
+        
+        # prevent taking own pieces
+        for p in pieces:
+            if p != self and square(p.currentPos) == destSq and self.side == p.side:
+                legal = False
+        
+        return legal
+            
 
 class Rook(Piece):
     def display(self):
@@ -172,7 +230,30 @@ class Rook(Piece):
         if selected == self:
             rect(self.currentPos[0], self.currentPos[1]+7, 25, 25)
         else:
-            rect(self.currentPos[0], self.currentPos[1]+4, 25, 25)            
+            rect(self.currentPos[0], self.currentPos[1]+4, 25, 25)    
+    
+    def legalmove(self, move):
+        move = list(move)
+        originSq = move[0]+move[1]
+        destSq = move[2]+move[3]
+        legal = False
+  
+        global files
+        global ranks
+        horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
+        verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
+        
+        if (horizontalDiff != 0 and verticalDiff == 0) or (horizontalDiff == 0 and verticalDiff != 0):
+            legal = True
+            # TO DO -- NEEDS THING SIMILAR TO BISHOP WHERE IT CAN'T GO THROUGH PIECES
+        
+        # prevent taking own pieces
+        for p in pieces:
+            if p != self and square(p.currentPos) == destSq and self.side == p.side:
+                legal = False
+        
+        return legal
+                
         
 class Queen(Piece):
     def display(self):
