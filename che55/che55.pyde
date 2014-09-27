@@ -2,15 +2,15 @@ def position(square):
     # converts algebraic notation (e.g. "e4") into coordinates
     square = list(square)
     global files
-    files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     global ranks
-    ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
     x = files.index(square[0]) * 80 + 70
     y = 630 - ranks.index(square[1]) * 80
     return (x, y)
 
 def square(position):
     # converts coordinates into algebraic notation
+    global files
+    global ranks
     file_index = (position[0] - 30) / 80
     rank_index = (670 - position[1]) / 80
     if 30 < position[0] < 670 and 30 < position[1] < 670:
@@ -490,6 +490,7 @@ def mouseReleased():
         selected = Piece('e4', 1)
         
 def setup():
+    # TODO: PLAY AS BLACK
     # TODO: IMPLEMENT GAME LIST
     # THINGS THAT GO WITH GAME LIST:
     # - TURNS (ONLY SIDE THAT HAS TURN CAN MOVE)
@@ -503,6 +504,28 @@ def setup():
     # - CHECK
     # - CHECKMATE
     size(displayWidth, displayHeight)
+    
+    global whiteCapturedCount
+    whiteCapturedCount = 0
+    
+    global blackCapturedCount
+    blackCapturedCount = 0
+    
+    global mousebutt
+    mousebutt = False
+    
+    global lastMoveOriginSquare
+    lastMoveOriginSquare = None
+    
+    global game
+    game = []
+    
+    global files
+    files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    #files.reverse()
+    global ranks
+    ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
+    #ranks.reverse()
     
     # create fonts
     global josefin
@@ -528,21 +551,6 @@ def setup():
     
     global captured
     captured = Piece('e5', 1)
-    
-    global whiteCapturedCount
-    whiteCapturedCount = 0
-    
-    global blackCapturedCount
-    blackCapturedCount = 0
-    
-    global mousebutt
-    mousebutt = False
-    
-    global lastMoveOriginSquare
-    lastMoveOriginSquare = None
-    
-    global game
-    game = []
     
 def draw():
     # TODO: IMPLMENENT ANIMATED ENGINE MOVES
