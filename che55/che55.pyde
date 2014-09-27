@@ -67,6 +67,8 @@ class Pawn(Piece):
         verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
         
         global pieces
+        global enpassantOp
+        global enpassantable
         
         if horizontalDiff == 0 and (verticalDiff == -1 + self.side * 2):
             legal = True
@@ -82,7 +84,8 @@ class Pawn(Piece):
             for p in pieces:
                 if p != self and p.side != self.side and square(p.currentPos) == destSq:
                     legal = True
-        
+                elif enpassantOp and p == enpassantable and p.side != self.side and pieces.index(p) < 16 and p.beenCaptured == False and square(p.currentPos) == destSq[0] + str(int(destSq[1]) + 1 + self.side * -2):
+                    legal = True
         return legal
         
 class Bishop(Piece):
@@ -364,8 +367,8 @@ class Queen(Piece):
     
             
 class King(Piece):
-    # TODO: MOVING INTO / OUT OF CHECK
-    # CASTLING
+    # TODO: [X] MOVING INTO / OUT OF CHECK
+    # [ ] CASTLING
     def display(self):
         self.shadow()
         smooth()
@@ -434,7 +437,24 @@ def selfCheck():
                 legal = False
     return legal
 
-
+def enpassant():
+    global enpassantOp
+    global game
+    global pieces
+    global enpassantable
+    enpassantOp = False
+    enpassantable = None
+    if len(game) > 0:
+        priorMove = list(game[-1])
+        originSq = priorMove[0]+priorMove[1]
+        destSq = priorMove[2]+priorMove[3]
+        horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
+        verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
+        for p in pieces[:16]:
+            if square(p.currentPos) == destSq and p.startSq == originSq and horizontalDiff == 0 and abs(verticalDiff) == 2:
+                enpassantOp = True
+                enpassantable = p
+                
 def mousePressed():
     if 30 < mouseX < 670 and 30 < mouseY < 670:
         global selected
@@ -453,16 +473,20 @@ def mousePressed():
 def mouseReleased():
     global mousebutt
     if 30 < mouseX < 670 and 30 < mouseY < 670 and mousebutt == True:
+        enpassant()
         mousebutt = False
         mouseSquare = square((mouseX, mouseY))
         global lastmove
         lastmove = lastMoveOriginSquare+mouseSquare
         global selected
+        global enpassantOp
+        global enpassantable
         if selected.legalmove(lastmove):
             global pieces
             global captured
             for p in pieces:
-                if p != selected and square(p.currentPos) == square(selected.currentPos):
+                if (p.side != selected.side and square(p.currentPos) == square(selected.currentPos)) or \
+                   (enpassantOp and p == enpassantable and pieces.index(p) < 16 and p.side != selected.side and square(p.currentPos) == square(selected.currentPos)[0] + str(int(square(selected.currentPos)[1])-1+p.side*2)):
                     captured = p
                     captured.beenCaptured = True
                     if captured.side == 1 and selfCheck():
@@ -488,20 +512,23 @@ def mouseReleased():
         else:
             selected.currentPos = position(lastMoveOriginSquare)
         selected = Piece('e4', 1)
+        enpassantOp = False
+        enpassantable = None
         
 def setup():
     # TODO: PLAY AS BLACK
+    # TODO: ANIMATED ENGINE MOVES
     # TODO: IMPLEMENT GAME LIST
     # THINGS THAT GO WITH GAME LIST:
-    # - TURNS (ONLY SIDE THAT HAS TURN CAN MOVE)
-    # - CAN'T MOVE INTO CHECK
+    # [X] TURNS (ONLY SIDE THAT HAS TURN CAN MOVE)
+    # [X] CAN'T MOVE INTO CHECK
     # - CASTLING
     #    - NO CASTLING THROUGH CHECK
     #    - NO CASTLING OUT OF CHECK
     #    - NO CASTLING AFTER KING OR ROOK HAS MOVED
-    # - ENPASSANT
+    # [X] ENPASSANT
     # - PAWNS BECOMING QUEENS, ETC.
-    # - CHECK
+    # [X] CHECK
     # - CHECKMATE
     size(displayWidth, displayHeight)
     
@@ -516,6 +543,9 @@ def setup():
     
     global lastMoveOriginSquare
     lastMoveOriginSquare = None
+    
+    global enpassantOp
+    enpassantOp = False
     
     global game
     game = []
@@ -551,6 +581,9 @@ def setup():
     
     global captured
     captured = Piece('e5', 1)
+    
+    global enpassantable
+    enpassantable = None
     
 def draw():
     # TODO: IMPLMENENT ANIMATED ENGINE MOVES
