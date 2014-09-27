@@ -518,12 +518,13 @@ def mouseReleased():
 def setup():
     # TODO: PLAY AS BLACK
     # TODO: ANIMATED ENGINE MOVES
-    # TODO: IMPLEMENT GAME LIST
+    # [X] TODO: IMPLEMENT GAME LIST
     # THINGS THAT GO WITH GAME LIST:
     # [X] TURNS (ONLY SIDE THAT HAS TURN CAN MOVE)
     # [X] CAN'T MOVE INTO CHECK
     # - CASTLING
     #    - NO CASTLING THROUGH CHECK
+    #    - NO CASTLING THROUGH PIECES
     #    - NO CASTLING OUT OF CHECK
     #    - NO CASTLING AFTER KING OR ROOK HAS MOVED
     # [X] ENPASSANT
@@ -552,10 +553,10 @@ def setup():
     
     global files
     files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    #files.reverse()
+    files.reverse()
     global ranks
     ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
-    #ranks.reverse()
+    ranks.reverse()
     
     # create fonts
     global josefin
