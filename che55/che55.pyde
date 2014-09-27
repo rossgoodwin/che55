@@ -26,6 +26,7 @@ class Piece(object):
         self.startPos = position(startSq)
         self.currentPos = self.startPos
         self.side = side
+        self.beenCaptured = False
 
 class Pawn(Piece):
     # TODO: 1. ENPASSANT
@@ -122,7 +123,7 @@ class Bishop(Piece):
         verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
         
         global pieces
-        if abs(horizontalDiff) == abs(verticalDiff):
+        if abs(horizontalDiff) == abs(verticalDiff) and horizontalDiff != 0:
         # if move == diagonal
             legal = True
             # but if there are pieces in the way...
@@ -325,7 +326,7 @@ class Queen(Piece):
                     for p in pieces:
                         if p != self and (square(p.currentPos) == files[files.index(destSq[0])+i] + destSq[1]):
                             legal = False
-        elif abs(horizontalDiff) == abs(verticalDiff):
+        elif abs(horizontalDiff) == abs(verticalDiff) and horizontalDiff != 0:
         # if move == diagonal
             legal = True
             # but if there are pieces in the way...
@@ -416,6 +417,24 @@ def moveviz(m):
     pos2 = position(m[2]+m[3])
     return [pos1[0], pos1[1], pos2[0], pos2[1]]
 
+
+def selfCheck():
+    legal = True
+    global game
+    global pieces
+    whiteKingPos = square(pieces[30].currentPos)
+    blackKingPos = square(pieces[31].currentPos)
+    if len(game) % 2 == 0:
+        for p in pieces[:30]:
+            if not p.beenCaptured and p.legalmove(square(p.currentPos)+whiteKingPos):
+                legal = False
+    else:
+        for p in pieces[:30]:
+            if not p.beenCaptured and p.legalmove(square(p.currentPos)+blackKingPos):
+                legal = False
+    return legal
+
+
 def mousePressed():
     if 30 < mouseX < 670 and 30 < mouseY < 670:
         global selected
@@ -440,33 +459,41 @@ def mouseReleased():
         lastmove = lastMoveOriginSquare+mouseSquare
         global selected
         if selected.legalmove(lastmove):
-            selected.currentPos = position(mouseSquare)
-            global game
-            game.append(lastmove)
-            print game
+            global pieces
+            global captured
+            for p in pieces:
+                if p != selected and square(p.currentPos) == square(selected.currentPos):
+                    captured = p
+                    captured.beenCaptured = True
+                    if captured.side == 1 and selfCheck():
+                        global whiteCapturedCount
+                        whiteCapturedCount +=1
+                        captured.currentPos = (700+30*whiteCapturedCount, 70)
+                        captured = Piece('e5', 1)
+                    elif captured.side == 0 and selfCheck():
+                        global blackCapturedCount
+                        blackCapturedCount += 1
+                        captured.currentPos = (700+30*blackCapturedCount, 630)
+                        captured = Piece('e5', 1)
+                    else:
+                        captured.beenCaptured = False
+                        captured = Piece('e5', 1)
+            if selfCheck():
+                selected.currentPos = position(mouseSquare)
+                global game
+                game.append(lastmove)
+                print game
+            else:
+                selected.currentPos = position(lastMoveOriginSquare)
         else:
             selected.currentPos = position(lastMoveOriginSquare)
-        global pieces
-        for p in pieces:
-            if p != selected and p.currentPos == selected.currentPos:
-                global captured
-                captured = p
-                if captured.side == 1:
-                    global whiteCapturedCount
-                    whiteCapturedCount += 1
-                    captured.currentPos = (700+30*whiteCapturedCount, 70)
-                    captured = Piece('e5', 1)
-                else:
-                    global blackCapturedCount
-                    blackCapturedCount += 1
-                    captured.currentPos = (700+30*blackCapturedCount, 630)
-                    captured = Piece('e5', 1)
         selected = Piece('e4', 1)
-
+        
 def setup():
     # TODO: IMPLEMENT GAME LIST
     # THINGS THAT GO WITH GAME LIST:
     # - TURNS (ONLY SIDE THAT HAS TURN CAN MOVE)
+    # - CAN'T MOVE INTO CHECK
     # - CASTLING
     #    - NO CASTLING THROUGH CHECK
     #    - NO CASTLING OUT OF CHECK
