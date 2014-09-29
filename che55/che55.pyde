@@ -29,8 +29,6 @@ class Piece(object):
         self.beenCaptured = False
 
 class Pawn(Piece):
-    # TODO: 1. ENPASSANT
-    # 2. BECOMING A QUEEN (OR ANY OTHER PIECE)
     def display(self):
     # display at currentPos
         self.shadow()
@@ -55,7 +53,6 @@ class Pawn(Piece):
             ellipse(self.currentPos[0], self.currentPos[1]+4, 20, 20)
             
     def legalmove(self, move):
-        # TODO: NEED TO ADD RULES FOR ENPASSANT
         move = list(move)
         originSq = move[0]+move[1]
         destSq = move[2]+move[3]
@@ -367,8 +364,6 @@ class Queen(Piece):
     
             
 class King(Piece):
-    # TODO: [X] MOVING INTO / OUT OF CHECK
-    # [ ] CASTLING
     def display(self):
         self.shadow()
         smooth()
@@ -603,9 +598,9 @@ def setup():
     #    - NO CASTLING OUT OF CHECK
     #    - NO CASTLING AFTER KING OR ROOK HAS MOVED
     # [X] ENPASSANT
-    # - PAWNS BECOMING QUEENS, ETC.
+    # [/] PAWNS BECOMING QUEENS, ETC.
     # [X] CHECK
-    # - CHECKMATE
+    # [ ] CHECKMATE
     size(displayWidth, displayHeight)
     
     global whiteCapturedCount
