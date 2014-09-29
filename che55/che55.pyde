@@ -403,14 +403,59 @@ class King(Piece):
   
         global files
         global ranks
+        global pieces
+        global game
+        global castling
         horizontalDiff = files.index(destSq[0]) - files.index(originSq[0])
         verticalDiff = ranks.index(destSq[1]) - ranks.index(originSq[1])
         
+        # Normal King Moves
         if (abs(horizontalDiff) == 1 and verticalDiff == 0) or (abs(verticalDiff) == 1 and horizontalDiff == 0) or (abs(verticalDiff) == 1 and abs(horizontalDiff) == 1):
             legal = True
             for p in pieces:
                 if p != self and square(p.currentPos) == destSq and self.side == p.side:
                     legal = False
+        # Castling
+        elif horizontalDiff == 2 and verticalDiff == 0:
+            # Kingside Castle
+            legal = True
+            # First check to see if king or rooks have moved
+            for m in game:
+                if m[:2] == self.startSq or (m[:2] == 'h1' and self.side == 1) or (m[:2] == 'h8' and self.side == 0):
+                    legal = False
+            # Now check to see if there are pieces in the way or if player would be castling out of or through check
+            if legal:
+                for p in pieces:
+                    if not p.beenCaptured and p != self:
+                        if self.side == 1 and p.side != self.side and (p.legalmove(square(p.currentPos)+'e1') or p.legalmove(square(p.currentPos)+'f1') or p.legalmove(square(p.currentPos)+'g1')):
+                            legal = False
+                        elif self.side == 0 and p.side != self.side and (p.legalmove(square(p.currentPos)+'e8') or p.legalmove(square(p.currentPos)+'f8') or p.legalmove(square(p.currentPos)+'g8')):
+                            legal = False
+                        elif self.side == 1 and square(p.currentPos) in ['f1', 'g1']:
+                            legal = False
+                        elif self.side == 0 and square(p.currentPos) in ['f8', 'g8']:
+                            legal = False
+            if legal:
+                castling = True
+        elif horizontalDiff == -2 and verticalDiff == 0:
+            # Queenside Castle
+            legal = True
+            for m in game:
+                if m[:2] == self.startSq  or (m[:2] == 'a1' and self.side == 1) or (m[:2] == 'a8' and self.side == 0):
+                    legal = False
+            if legal:
+                for p in pieces:
+                    if not p.beenCaptured and p != self:
+                        if self.side == 1 and p.side != self.side and (p.legalmove(square(p.currentPos)+'b1') or p.legalmove(square(p.currentPos)+'c1') or p.legalmove(square(p.currentPos)+'d1') or p.legalmove(square(p.currentPos)+'e1')):
+                            legal = False
+                        elif self.side == 0 and p.side != self.side and (p.legalmove(square(p.currentPos)+'b8') or p.legalmove(square(p.currentPos)+'c8') or p.legalmove(square(p.currentPos)+'d8') or p.legalmove(square(p.currentPos)+'e8')):
+                            legal = False
+                        elif self.side == 1 and square(p.currentPos) in ['b1', 'c1', 'd1']:
+                            legal = False
+                        elif self.side == 0 and square(p.currentPos) in ['b8', 'c8', 'd8']:
+                            legal = False
+            if legal:
+                castling = True
         
         return legal
         
@@ -428,12 +473,12 @@ def selfCheck():
     whiteKingPos = square(pieces[30].currentPos)
     blackKingPos = square(pieces[31].currentPos)
     if len(game) % 2 == 0:
-        for p in pieces[:30]:
-            if not p.beenCaptured and p.legalmove(square(p.currentPos)+whiteKingPos):
+        for p in pieces:
+            if p != pieces[30] and not p.beenCaptured and p.legalmove(square(p.currentPos)+whiteKingPos):
                 legal = False
     else:
-        for p in pieces[:30]:
-            if not p.beenCaptured and p.legalmove(square(p.currentPos)+blackKingPos):
+        for p in pieces:
+            if p != pieces[31] and not p.beenCaptured and p.legalmove(square(p.currentPos)+blackKingPos):
                 legal = False
     return legal
 
@@ -454,6 +499,23 @@ def enpassant():
             if square(p.currentPos) == destSq and p.startSq == originSq and horizontalDiff == 0 and abs(verticalDiff) == 2:
                 enpassantOp = True
                 enpassantable = p
+                
+def castleRookMove(castle):
+    global pieces
+    whiteRookA = pieces[24]
+    whiteRookH = pieces[25]
+    blackRookA = pieces[26]
+    blackRookH = pieces[27]
+    if castle == 'e1g1':
+        whiteRookH.currentPos = position('f1')
+    elif castle == 'e1c1':
+        whiteRookA.currentPos = position('d1')
+    elif castle == 'e8g8':
+        blackRookH.currentPos = position('f8')
+    elif castle == 'e8c8':
+        blackRookA.currentPos = position('d8')
+    else:
+        pass
                 
 def mousePressed():
     if 30 < mouseX < 670 and 30 < mouseY < 670:
@@ -505,8 +567,21 @@ def mouseReleased():
             if selfCheck():
                 selected.currentPos = position(mouseSquare)
                 global game
-                game.append(lastmove)
+                global castling
+                pawnBecomes = ""
+                # pawns becoming queens, etc
+                if selected in pieces[:8] and lastmove[1] == '7' and lastmove[3] == '8':
+                    pieces[pieces.index(selected)] = Queen(lastmove[2:], 1)
+                    pawnBecomes = "q"
+                elif selected in pieces[8:16] and lastmove[1] == '2' and lastmove[3] == '1':
+                    pieces[pieces.index(selected)] = Queen(lastmove[2:], 0)
+                    pawnBecomes = "q"
+                game.append(lastmove+pawnBecomes)
                 print game
+                # castling rook move
+                if lastmove in ["e1g1", "e1c1", "e8g8", "e8c8"] and castling:
+                    castleRookMove(lastmove)
+                    castling = False
             else:
                 selected.currentPos = position(lastMoveOriginSquare)
         else:
@@ -522,7 +597,7 @@ def setup():
     # THINGS THAT GO WITH GAME LIST:
     # [X] TURNS (ONLY SIDE THAT HAS TURN CAN MOVE)
     # [X] CAN'T MOVE INTO CHECK
-    # - CASTLING
+    # [X] CASTLING
     #    - NO CASTLING THROUGH CHECK
     #    - NO CASTLING THROUGH PIECES
     #    - NO CASTLING OUT OF CHECK
@@ -548,15 +623,18 @@ def setup():
     global enpassantOp
     enpassantOp = False
     
+    global castling
+    castling = False
+    
     global game
     game = []
     
     global files
     files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    files.reverse()
+    #files.reverse()
     global ranks
     ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
-    ranks.reverse()
+    #ranks.reverse()
     
     # create fonts
     global josefin
@@ -589,7 +667,7 @@ def setup():
 def draw():
     # TODO: IMPLMENENT ANIMATED ENGINE MOVES
     # draw the background
-    background(230)
+    background(245)
     
     # draw the board frame
     noStroke()
