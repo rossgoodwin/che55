@@ -1,3 +1,5 @@
+add_library('minim')
+
 def position(square):
     # converts algebraic notation (e.g. "e4") into coordinates
     square = list(square)
