@@ -119,7 +119,9 @@ void setup() {
 
 void draw() {
   String scoreString[] = loadStrings("score.txt");
-  score = int(scoreString[0]);
+  if (scoreString.length >= 1) {
+    score = int(scoreString[0]);
+  }
   //println(score);
   
   // status 0: score <= -450
