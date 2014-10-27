@@ -1,4 +1,12 @@
 import ddf.minim.*;
+import processing.serial.*;
+
+Serial myPort;
+boolean firstContact = false;
+String myString;
+float whiteVol = -40.0;
+float blackVol = -40.0;
+int reset = 0;
 
 Minim minim1;
 Minim minim2;
@@ -54,7 +62,38 @@ void playTracks(int s, int t1, int t2, int t3, int t4, int t5, int t6) {
   // println(tracks[t4]);
 }
 
+void serialEvent(Serial myPort) {
+  myString = myPort.readStringUntil('\n');
+  if (myString != null) {
+    myString = trim(myString);
+    if (firstContact == false) {
+      if (myString.equals("hello")) {
+        myPort.clear();
+        firstContact = true;
+        myPort.write('A');
+      }
+    }
+    else {
+      int sensors[] = int(split(myString, ','));
+      for (int i=0; i<sensors.length; i++) {
+        print("Sensor " + i + ": " + sensors[i] + "\t");
+      }
+      println();
+      if (sensors.length > 1) {
+        whiteVol = map(sensors[0], 1023, 0, -40.0, 6.0);
+        blackVol = map(sensors[1], 1023, 0, -40.0, 6.0);
+        reset = sensors[2];
+      }
+    }
+    myPort.write("A");
+  }
+}
+
 void setup() {
+  String portName = "/dev/tty.usbmodem1411";
+  myPort = new Serial(this, portName, 9600);
+  myPort.bufferUntil('\n');
+  
   minim1 = new Minim(this);
   minim2 = new Minim(this);
   minim3 = new Minim(this);
@@ -126,5 +165,17 @@ void draw() {
   // status 10: score >= 450
   else if (score >= 450 && status[10]) {
     playTracks(10, 1, 2, 3, 0, 0, 0);
+  }
+  
+  // set gain based on potentiometer input
+  player1.setGain(whiteVol);
+  player2.setGain(whiteVol);
+  player3.setGain(whiteVol);
+  player4.setGain(blackVol);
+  player5.setGain(blackVol);
+  player6.setGain(blackVol);
+  
+  if (reset == 1) {
+    allStatusTrue();
   }
 }
