@@ -9,7 +9,7 @@ engine = subprocess.Popen(
 
 # CLEAR EXISTING FILES
 
-score_file = open('che55/data/score.txt', 'w')
+score_file = open('mixer/data/score.txt', 'w')
 score_file.write('0')
 score_file.close()
 
@@ -99,7 +99,7 @@ while True:
 			print "BOOM! PIECES FLY OFF THE BOARD!"
 			break
 
-		f = open('che55/data/score.txt', 'w')
+		f = open('mixer/data/score.txt', 'w')
 		f.write(str(analysis['score'][1]))
 		f.close()
 
